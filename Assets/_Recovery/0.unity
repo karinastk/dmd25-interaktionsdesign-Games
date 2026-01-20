@@ -774,8 +774,8 @@ MonoBehaviour:
   restartButton: {fileID: 791559134}
   bombButtonPlayer1: {fileID: 969073595}
   bombButtonPlayer2: {fileID: 619716250}
-  buttonIndicator1: {fileID: 969073593}
-  buttonIndicator2: {fileID: 619716248}
+  buttonIndicator1: {fileID: 619716248}
+  buttonIndicator2: {fileID: 969073593}
   fieldButtons:
   - {fileID: 2076713671}
   - {fileID: 2095047448}
