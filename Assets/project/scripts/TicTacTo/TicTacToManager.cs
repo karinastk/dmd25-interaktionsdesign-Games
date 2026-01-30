@@ -2,229 +2,372 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.Collections;
+using System.Collections.Generic;
 
 public class TicTacToManager : MonoBehaviour
 {
-    public TextMeshProUGUI infoText;
-    public Button restartButton;
+	// ================= UI ELEMENTE =================
+	public TextMeshProUGUI infoText; // Zeigt aktuelle Spielerinfo, Gewinn, Draw etc.
+	public Button restartButton;     // Neustart-Button
 
-    public Button bombButtonPlayer1; // Linke Bombe
-    public Button bombButtonPlayer2; // Rechte Bombe
+	// Bomben-Buttons für Spieler 1 und Spieler 2
+	public Button bombButtonPlayer1;
+	public Button bombButtonPlayer2;
 
-    public GameObject buttonIndicator1;
-    public GameObject buttonIndicator2;
+	// Feature-Buttons für Spieler 1 und Spieler 2
+	public Button[] featureButtonsPlayer1;
+	public Button[] featureButtonsPlayer2;
 
-    int currentPlayer = 0; // 0 = Player 1, 1 = Player 2
-    private bool gameEnded = false;
+	// Alle Spielfeld-Buttons (16 Felder)
+	public FieldButton[] fieldButtons;
 
-    public FieldButton[] fieldButtons;
+	[Header("Start Banner")]
+	public GameObject startBanner; // Banner zu Spielstart
 
-    int[] reihe1, reihe2, reihe3, reihe4;
-    int[] spalte1, spalte2, spalte3, spalte4;
-    int[] diagonale1, diagonale2, diagonale3, diagonale4;
+	[Header("Sound")]
+	public AudioSource audioSource;       // AudioSource für Effekte
+	public AudioClip placeSound;          // Sound für X/O
+	public AudioClip startBannerSound;    // Sound für Start-Banner
+	public AudioClip bombSound;           // Sound beim Zerstören von Feldern
+	public AudioClip winSound;            // Sound bei Sieg
+	public AudioClip drawSound;           // Sound bei Unentschieden
+	public AudioClip clickSound;          // Sound für Buttonklicks (Feature, Bomb, Restart)
 
-    public int[][] winningCombinations;
+	[Header("Background Music")]
+	public AudioSource musicSource;       // Separate AudioSource für Musik
+	public AudioClip backgroundMusic;     // Hintergrundmusikclip
 
-    private int[] blockedFields = new int[3];
-    private bool blockedFieldsReleased = false;
+	// ================= SPIELSTATUS =================
+	int currentPlayer = 0;  // 0 = Spieler 1, 1 = Spieler 2
+	bool gameEnded = false; // True wenn das Spiel gewonnen oder unentschieden ist
+	bool gameStarted = false; // True wenn Spiel gestartet wurde
 
-    // Bomben
-    private bool isBombActive = false;
-    private int bombOwner = -1; // 0 = Player 1, 1 = Player 2
+	// ================= FEATURES =================
+	public enum FeatureType { BlockField, OverwriteEnemy, ExtraTurn }
+	private List<FeatureType>[] playerFeatures = new List<FeatureType>[2]; // Liste der Features für jeden Spieler
+	private FeatureType? activeFeature = null; // Momentan ausgewähltes Feature
 
-    private int[] movesPerPlayer = new int[2]; // Züge pro Spieler zählen
+	private FieldButton blockedField = null; // Feld, das blockiert wurde
+	private bool blockPendingRelease = false; // Wird benutzt, um Block nach einem Zug zu entfernen
+	private int extraTurnsRemaining = 0; // Extra-Züge von Feature "ExtraTurn"
 
-    void Start()
-    {
-        infoText.text = "Player 1";
-        SetUpWinningCombinations();
-        BlockRandomFields();
+	// ================= BOMB =================
+	private bool isBombActive = false; // True, wenn Spieler eine Bombe aktiviert hat
+	private bool[] bombUsed = new bool[2]; // Prüft, ob ein Spieler seine Bombe schon benutzt hat
+	private int[] movesPerPlayer = new int[2]; // Zählt Züge pro Spieler, um Bombe freizuschalten
 
-        restartButton.onClick.AddListener(RestartGame);
+	// ================= WIN / DRAW =================
+	int[][] winningCombinations; // Alle möglichen Gewinnlinien (4 in a row für 4x4 Feld)
 
-        // Bombenbuttons verbinden
-        bombButtonPlayer1.onClick.AddListener(() => ActivateBombMode(0));
-        bombButtonPlayer2.onClick.AddListener(() => ActivateBombMode(1));
-    }
+	void Start()
+	{
+		// Start-Banner aktivieren
+		if (startBanner != null)
+			startBanner.SetActive(true);
 
-    private void OnDestroy()
-    {
-        restartButton.onClick.RemoveListener(RestartGame);
-        bombButtonPlayer1.onClick.RemoveAllListeners();
-        bombButtonPlayer2.onClick.RemoveAllListeners();
-    }
+		infoText.text = "Click Start";
 
-    public void OnButtonClickedInManager(FieldButton fieldButton)
-    {
-        if (gameEnded) return;
+		// Gewinnlinien vorbereiten
+		SetUpWinningCombinations();
 
-        // Bombenmodus
-        if (isBombActive)
-        {
-            HandleBombClick(fieldButton);
-            return;
-        }
+		// Features zufällig den Spielern zuweisen
+		AssignRandomFeatures();
 
-        // Gesperrte Felder
-        if (System.Array.Exists(blockedFields, e => e == fieldButton.index))
-        {
-            infoText.text = "This field is blocked!";
-            return;
-        }
+		// Feature-Buttons vorbereiten und beschriften
+		SetupFeatureButtons();
 
-        // Feld besetzen
-        fieldButton.SetField(currentPlayer);
-        movesPerPlayer[currentPlayer]++;
+		// Restart Button: Spiel neu starten mit Sound
+		restartButton.onClick.AddListener(() => StartCoroutine(RestartWithSound()));
 
-        // Spielerwechsel
-        currentPlayer = currentPlayer == 1 ? 0 : 1;
-        infoText.text = "Player " + (currentPlayer + 1);
+		// Bomb Buttons: Sound abspielen + Bombe aktivieren
+		bombButtonPlayer1.onClick.AddListener(() => { PlayClickSound(); ActivateBomb(0); });
+		bombButtonPlayer2.onClick.AddListener(() => { PlayClickSound(); ActivateBomb(1); });
 
-        // Nach beiden ersten Zügen gesperrte Felder freigeben
-        if (!blockedFieldsReleased && currentPlayer == 0)
-        {
-            ReleaseBlockedFields();
-            blockedFieldsReleased = true;
-        }
+		// Hintergrundmusik starten, falls gesetzt
+		if (musicSource != null && backgroundMusic != null)
+		{
+			musicSource.clip = backgroundMusic;
+			musicSource.loop = true;
+			musicSource.Play();
+		}
+	}
 
-        CheckForWin();
-        CheckForDraw();
-    }
+	// ================= START =================
+	public void StartGame()
+	{
+		gameStarted = true;
 
-    void HandleBombClick(FieldButton clickedField)
-    {
-        int removed = 0;
-        System.Random rand = new System.Random();
+		// Banner ausblenden
+		if (startBanner != null)
+			startBanner.SetActive(false);
 
-        while (removed < 3)
-        {
-            int randomIndex = rand.Next(fieldButtons.Length);
+		infoText.text = "Player 1"; // Spieler 1 beginnt
 
-            FieldButton fb = fieldButtons[randomIndex];
+		// Start Banner Sound
+		if (audioSource != null && startBannerSound != null)
+			audioSource.PlayOneShot(startBannerSound);
+	}
 
-            // Nur Felder löschen, die gesetzt sind (nicht leer, nicht BLOCKED)
-            if (fb.Player != -1 && !fb.IsBlocked)
-            {
-                fb.ResetField();
-                removed++;
-            }
-        }
+	// ================= FEATURE SETUP =================
+	void AssignRandomFeatures()
+	{
+		// Mögliche Features
+		FeatureType[] all = { FeatureType.BlockField, FeatureType.OverwriteEnemy, FeatureType.ExtraTurn };
+		System.Random rand = new System.Random();
 
-        infoText.text = "Player " + (bombOwner + 1) + " used bomb!";
-        isBombActive = false; // Bombenmodus beenden
-    }
+		for (int p = 0; p < 2; p++)
+		{
+			playerFeatures[p] = new List<FeatureType>();
+			List<FeatureType> pool = new List<FeatureType>(all);
 
-    public void ActivateBombMode(int playerNumber)
-    {
-        if (currentPlayer != playerNumber)
-        {
-            infoText.text = "This bomb is only for Player " + (playerNumber + 1);
-            return;
-        }
+			// Zwei verschiedene Features pro Spieler auswählen
+			while (playerFeatures[p].Count < 2)
+			{
+				int r = rand.Next(pool.Count);
+				playerFeatures[p].Add(pool[r]);
+				pool.RemoveAt(r);
+			}
+		}
+	}
 
-        if (movesPerPlayer[playerNumber] >= 3)
-        {
-            isBombActive = true;
-            bombOwner = playerNumber;
-            infoText.text = "Player " + (playerNumber + 1) + " activated bomb! Click a field.";
-        }
-        else
-        {
-            infoText.text = "Bomb not ready yet!";
-        }
-        if (currentPlayer == 0)
-        {
-           buttonIndicator1.SetActive(false);
-        }
-        else if (currentPlayer == 1)
-        {
-              
-           buttonIndicator2.SetActive(false);
-        }
-    }
+	void SetupFeatureButtons()
+	{
+		// Buttons für beide Spieler einrichten
+		SetupButtonsForPlayer(featureButtonsPlayer1, 0);
+		SetupButtonsForPlayer(featureButtonsPlayer2, 1);
+	}
 
-    void CheckForWin()
-    {
-        foreach (var combination in winningCombinations)
-        {
-            if (fieldButtons[combination[0]].Player == fieldButtons[combination[1]].Player &&
-                fieldButtons[combination[1]].Player == fieldButtons[combination[2]].Player &&
-                fieldButtons[combination[2]].Player == fieldButtons[combination[3]].Player &&
-                fieldButtons[combination[0]].Player != -1)
-            {
-                string winner = fieldButtons[combination[0]].Player == 0 ? "Player 1" : "Player 2";
-                infoText.text = winner + " wins!";
-                gameEnded = true;
-                return;
-            }
-        }
-    }
+	void SetupButtonsForPlayer(Button[] buttons, int player)
+	{
+		for (int i = 0; i < buttons.Length; i++)
+		{
+			if (i >= playerFeatures[player].Count) break;
 
-    void CheckForDraw()
-    {
-        foreach (var button in fieldButtons)
-            if (button.Player == -1)
-                return;
+			FeatureType feature = playerFeatures[player][i];
+			TextMeshProUGUI tmp = buttons[i].GetComponentInChildren<TextMeshProUGUI>();
 
-        infoText.text = "It's a draw!";
-        gameEnded = true;
-    }
+			// Buttontext setzen
+			tmp.text = feature == FeatureType.OverwriteEnemy ? "Overwrite\nEnemy" : feature.ToString();
 
-    void SetUpWinningCombinations()
-    {
-        reihe1 = new int[] { 0, 1, 2, 3 };
-        reihe2 = new int[] { 4, 5, 6, 7 };
-        reihe3 = new int[] { 8, 9, 10, 11 };
-        reihe4 = new int[] { 12, 13, 14, 15 };
+			int index = i;
+			buttons[i].onClick.AddListener(() =>
+			{
+				PlayClickSound(); // Sound beim Klicken eines Feature-Buttons
+				ActivateFeature(player, feature, buttons[index]);
+			});
+		}
+	}
 
-        spalte1 = new int[] { 0, 4, 8, 12 };
-        spalte2 = new int[] { 1, 5, 9, 13 };
-        spalte3 = new int[] { 2, 6, 10, 14 };
-        spalte4 = new int[] { 3, 7, 11, 15 };
+	void ActivateFeature(int player, FeatureType feature, Button btn)
+	{
+		// Prüfen, ob Spieler dran ist und Spiel läuft
+		if (currentPlayer != player || gameEnded || !gameStarted) return;
 
-        diagonale1 = new int[] { 0, 5, 10, 15 };
-        diagonale2 = new int[] { 3, 6, 9, 12 };
-        diagonale3 = new int[] { 0, 4, 8, 12 };
-        diagonale4 = new int[] { 3, 7, 11, 15 };
+		activeFeature = feature;
+		btn.interactable = false; // Button nach Nutzung deaktivieren
 
-        winningCombinations = new int[][]
-        {
-            reihe1, reihe2, reihe3, reihe4,
-            spalte1, spalte2, spalte3, spalte4,
-            diagonale1, diagonale2, diagonale3, diagonale4
-        };
-    }
+		if (feature == FeatureType.ExtraTurn && extraTurnsRemaining == 0)
+			extraTurnsRemaining = 1;
 
-    void BlockRandomFields()
-    {
-        System.Random rand = new System.Random();
-        int blockedCount = 0;
+		infoText.text = "Player " + (player + 1) + " uses " + feature;
+	}
 
-        while (blockedCount < 3)
-        {
-            int randomIndex = rand.Next(fieldButtons.Length);
+	// ================= GAME LOGIC =================
+	public void OnButtonClickedInManager(FieldButton field)
+	{
+		if (!gameStarted || gameEnded) return;
 
-            if (System.Array.Exists(blockedFields, e => e == randomIndex))
-                continue;
+		if (isBombActive)
+		{
+			HandleBomb(); // Wenn Bombe aktiv, Felder löschen
+			return;
+		}
 
-            blockedFields[blockedCount] = randomIndex;
-            fieldButtons[randomIndex].SetField(-2);
-            fieldButtons[randomIndex].SetButtonText("BLOCKED");
-            blockedCount++;
-        }
-    }
+		if (activeFeature.HasValue)
+		{
+			ApplyFeature(field); // Feature auf das Feld anwenden
+			return;
+		}
 
-    void ReleaseBlockedFields()
-    {
-        foreach (int index in blockedFields)
-        {
-            fieldButtons[index].SetField(-1);
-            fieldButtons[index].SetButtonText("");
-        }
-    }
+		// Normales Feld setzen, wenn frei
+		if (field.Player != -1 || field.IsBlocked) return;
 
-    public void RestartGame()
-    {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
-    }
+		field.SetField(currentPlayer);
+		PlayPlaceSound(); // Sound für X oder O
+
+		movesPerPlayer[currentPlayer]++;
+		EndTurn(); // Nächster Spieler
+	}
+
+	void ApplyFeature(FieldButton field)
+	{
+		switch (activeFeature.Value)
+		{
+			case FeatureType.BlockField:
+				if (field.Player == -1)
+				{
+					if (blockedField != null)
+						blockedField.ReleaseBlock(); // Vorherigen Block entfernen
+
+					field.SetBlocked(); // Feld blockieren
+					blockedField = field;
+					blockPendingRelease = false;
+
+					PlayPlaceSound(); // Sound beim Block setzen
+				}
+				EndTurn();
+				break;
+
+			case FeatureType.OverwriteEnemy:
+				if (field.Player != -1 && field.Player != currentPlayer)
+				{
+					field.ForceSetField(currentPlayer); // Gegnerfeld überschreiben
+					PlayPlaceSound();
+				}
+				EndTurn();
+				break;
+
+			case FeatureType.ExtraTurn:
+				field.SetField(currentPlayer);
+				PlayPlaceSound();
+				if (extraTurnsRemaining == 0)
+					extraTurnsRemaining = 1;
+				EndTurn();
+				break;
+		}
+
+		activeFeature = null; // Feature zurücksetzen
+	}
+
+	// ================= SOUND =================
+	void PlayPlaceSound() { if (audioSource != null && placeSound != null) { audioSource.pitch = Random.Range(0.95f, 1.05f); audioSource.PlayOneShot(placeSound); } }
+	void PlayClickSound() { if (audioSource != null && clickSound != null) audioSource.PlayOneShot(clickSound); }
+	void PlayBombSound() { if (audioSource != null && bombSound != null) audioSource.PlayOneShot(bombSound); }
+	void PlayWinSound() { if (audioSource != null && winSound != null) audioSource.PlayOneShot(winSound); }
+	void PlayDrawSound() { if (audioSource != null && drawSound != null) audioSource.PlayOneShot(drawSound); }
+
+	// ================= TURN =================
+	void EndTurn()
+	{
+		CheckForWinOrDraw();
+		if (gameEnded) return;
+
+		if (extraTurnsRemaining > 0)
+		{
+			extraTurnsRemaining--;
+			infoText.text = "Extra Turn!"; // Extra-Zug anzeigen
+			return;
+		}
+
+		currentPlayer = currentPlayer == 0 ? 1 : 0; // Spieler wechseln
+		infoText.text = "Player " + (currentPlayer + 1);
+
+		// Blockfeld nach einem Zug eventuell freigeben
+		if (blockPendingRelease && blockedField != null)
+		{
+			blockedField.ReleaseBlock();
+			blockedField = null;
+			blockPendingRelease = false;
+		}
+
+		if (blockedField != null && !blockPendingRelease)
+			blockPendingRelease = true;
+	}
+
+	// ================= BOMB =================
+	void ActivateBomb(int player)
+	{
+		// Prüfen ob Bombe verfügbar ist
+		if (bombUsed[player] || currentPlayer != player || movesPerPlayer[player] < 3)
+			return;
+
+		bombUsed[player] = true;
+		isBombActive = true;
+
+		if (player == 0) bombButtonPlayer1.interactable = false;
+		else bombButtonPlayer2.interactable = false;
+
+		infoText.text = "Player " + (player + 1) + " activated bomb!";
+	}
+
+	void HandleBomb()
+	{
+		int removed = 0;
+		System.Random rand = new System.Random();
+
+		// Drei zufällige Felder löschen
+		while (removed < 3)
+		{
+			int r = rand.Next(fieldButtons.Length);
+			FieldButton fb = fieldButtons[r];
+
+			if (fb.Player != -1 && !fb.IsBlocked)
+			{
+				fb.ResetField();
+				removed++;
+			}
+		}
+
+		isBombActive = false;
+		PlayBombSound(); // Sound nach dem Löschen der Felder
+		EndTurn();
+	}
+
+	// ================= WIN / DRAW =================
+	void CheckForWinOrDraw()
+	{
+		// Gewinn prüfen
+		foreach (var c in winningCombinations)
+		{
+			int p = fieldButtons[c[0]].Player;
+			if (p == -1) continue;
+
+			if (fieldButtons[c[1]].Player == p &&
+				fieldButtons[c[2]].Player == p &&
+				fieldButtons[c[3]].Player == p)
+			{
+				infoText.text = "Player " + (p + 1) + " wins!";
+				gameEnded = true;
+				PlayWinSound(); // Sound beim Sieg
+				return;
+			}
+		}
+
+		// Prüfen auf Unentschieden
+		foreach (var fb in fieldButtons)
+			if (fb.Player == -1) return;
+
+		infoText.text = "Draw!";
+		gameEnded = true;
+		PlayDrawSound(); // Sound beim Unentschieden
+	}
+
+	void SetUpWinningCombinations()
+	{
+		// Alle Gewinnlinien für 4x4-Feld (horizontal, vertikal, diagonal)
+		winningCombinations = new int[][]
+		{
+			new int[]{0,1,2,3},
+			new int[]{4,5,6,7},
+			new int[]{8,9,10,11},
+			new int[]{12,13,14,15},
+			new int[]{0,4,8,12},
+			new int[]{1,5,9,13},
+			new int[]{2,6,10,14},
+			new int[]{3,7,11,15},
+			new int[]{0,5,10,15},
+			new int[]{3,6,9,12}
+		};
+	}
+
+	// ================= RESTART =================
+	private IEnumerator RestartWithSound()
+	{
+		PlayClickSound(); // Sound vor Neustart
+		if (audioSource != null && clickSound != null)
+			yield return new WaitForSeconds(clickSound.length);
+
+		SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex); // Szene neu laden
+	}
 }

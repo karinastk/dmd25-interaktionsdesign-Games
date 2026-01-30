@@ -3,57 +3,69 @@ using UnityEngine;
 
 public class FieldButton : MonoBehaviour
 {
-    private TicTacToManager ticTacToManager;
-    internal int index;
+	private TicTacToManager manager; // Referenz zum Spielmanager
+	public int index;                // Index des Feldes im Spielfeldarray
 
-    public int Player { get; private set; } = -1;
-    public bool IsBlocked { get; private set; } = false;
+	public int Player { get; private set; } = -1; // -1 = leer, 0 = Player1, 1 = Player2
+	public bool IsBlocked { get; private set; } = false; // Ob das Feld blockiert ist
 
-    private TextMeshProUGUI buttonText;
+	TextMeshProUGUI buttonText; // Textanzeige auf dem Button
 
-    void Start()
-    {
-        ticTacToManager = FindObjectOfType<TicTacToManager>();
-        buttonText = GetComponentInChildren<TextMeshProUGUI>();
-    }
+	void Start()
+	{
+		// Spielmanager finden und Textkomponente des Buttons holen
+		manager = FindObjectOfType<TicTacToManager>();
+		buttonText = GetComponentInChildren<TextMeshProUGUI>();
+	}
 
-    public void OnButtonClicked()
-    {
-        if (Player != -1 || IsBlocked)
-            return;
+	// Wird aufgerufen, wenn der Button im Spiel angeklickt wird
+	public void OnButtonClicked()
+	{
+		manager.OnButtonClickedInManager(this); // Übergibt das Feld an den Manager
+	}
 
-        ticTacToManager.OnButtonClickedInManager(this);
-    }
+	// Normales Setzen eines Feldes
+	public void SetField(int player)
+	{
+		if (IsBlocked) return;          // Blockierte Felder können nicht gesetzt werden
+		Player = player;                // Spieler setzen
+		SetText(player == 0 ? "X" : "O"); // Text anzeigen
+	}
 
-    public void SetField(int currentPlayer)
-    {
-        if (IsBlocked) return;
-        Player = currentPlayer;
-        SetButtonText(currentPlayer == 0 ? "X" : "O");
-    }
+	// Erzwingt das Setzen eines Feldes (OverwriteEnemy Feature)
+	public void ForceSetField(int player)
+	{
+		Player = player;  // Spieler setzen
+		IsBlocked = false; // Blockierung aufheben, falls gesetzt
+		SetText(player == 0 ? "X" : "O");
+	}
 
-    public void SetButtonText(string text)
-    {
-        if (buttonText != null)
-            buttonText.text = text;
-    }
+	// Feld blockieren (BlockField Feature)
+	public void SetBlocked()
+	{
+		IsBlocked = true;
+		SetText("BLOCKED"); // Anzeigen, dass das Feld blockiert ist
+	}
 
-    public void SetBlocked()
-    {
-        IsBlocked = true;
-        SetButtonText("BLOCKED");
-    }
+	// Blockierung aufheben (nach Gegnerzug oder Auflösung)
+	public void ReleaseBlock()
+	{
+		IsBlocked = false;
+		SetText(""); // Text leeren
+	}
 
-    public void ReleaseBlock()
-    {
-        IsBlocked = false;
-        SetButtonText("");
-    }
+	// Feld komplett zurücksetzen (für Bomb oder Neustart)
+	public void ResetField()
+	{
+		Player = -1;
+		IsBlocked = false;
+		SetText("");
+	}
 
-    public void ResetField()
-    {
-        Player = -1;
-        IsBlocked = false;
-        SetButtonText("");
-    }
+	// Interne Methode, um Text auf dem Button zu ändern
+	void SetText(string t)
+	{
+		if (buttonText != null)
+			buttonText.text = t;
+	}
 }
