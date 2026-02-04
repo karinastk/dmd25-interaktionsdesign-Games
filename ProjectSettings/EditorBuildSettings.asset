@@ -5,9 +5,21 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/project/Scenes/Kugel Test.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/project/Scenes/Main Menu.unity
+    guid: 348e0a47540ab1f4eb852ba0081d5420
+  - enabled: 1
+    path: Assets/project/Scenes/TicTacToe.unity
+    guid: 9678947d4045d4c459be0f3399d69336
+  - enabled: 1
+    path: Assets/project/Scenes/Breakout.unity
+    guid: ce16153d6e9a43348baaef3d7ffc5dff
+  - enabled: 1
+    path: Assets/project/Scenes/Pong.unity
+    guid: 23a4160bec260ce42995c79466b9ef30
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

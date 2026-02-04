@@ -2,67 +2,53 @@ using UnityEngine;
 
 namespace Breakout
 {
+	public class BreakoutPaddle : MonoBehaviour
+	{
+		public BreakoutControls controls;
 
-    public class BreakoutPaddle : MonoBehaviour
-    {
-        public BreakoutControls controls;
+		private Vector3 startPosition;
 
-        public enum Direction
-        {
-            Left,
-            Right
+		public enum Direction
+		{
+			Left,
+			Right
+		}
 
-        }
-        // Update is called once per frame
-        void Update()
-        {
-            if (Input.GetKey(controls.leftKey))
-                Move(Direction.Left);
+		void Awake()
+		{
+			startPosition = transform.position;
+		}
 
-            if (Input.GetKey(controls.rightKey))
-                Move(Direction.Right);
-        }
+		void Update()
+		{
+			if (!BreakoutManager.instance.GameStarted)
+				return;
 
-        void Move(Direction direction)
-        {
-            {
-                float moveDistance = controls.paddleSpeed * Time.deltaTime;
-                moveDistance *= direction == Direction.Right ? 1 : -1;
+			if (Input.GetKey(controls.leftKey))
+				Move(Direction.Left);
 
-                Vector3 moveVector = new Vector3(moveDistance, 0, 0);
+			if (Input.GetKey(controls.rightKey))
+				Move(Direction.Right);
+		}
 
-                if (transform.position.x + moveDistance > controls.maxX)
-                {
-                    transform.position =
-                        new Vector3(                           
-                            controls.maxX,
-                            transform.position.y,
-                            transform.position.z
-                            );
-                }
-                else if (transform.position.x + moveDistance < controls.minX)
-                {
-                    transform.position =
-                       new Vector3(
-                           controls.minX,
-                           transform.position.y,
-                           transform.position.z
-                           );
+		void Move(Direction direction)
+		{
+			float moveDistance = controls.paddleSpeed * Time.deltaTime;
+			moveDistance *= direction == Direction.Right ? 1 : -1;
 
-                }
-                else
-                {
-                    transform.Translate(moveVector);
-                }
+			float newX = transform.position.x + moveDistance;
 
+			if (newX > controls.maxX)
+				newX = controls.maxX;
+			else if (newX < controls.minX)
+				newX = controls.minX;
 
-                Debug.Log(direction.ToString() + "gedrückt");
+			transform.position = new Vector3(newX, transform.position.y, transform.position.z);
+		}
 
-
-
-
-            }
-
-        }
-    }
+		public void ResetPaddle()
+		{
+			transform.position = startPosition;
+		}
+	}
 }
