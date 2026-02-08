@@ -40,8 +40,12 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 405488274200117893, guid: e89142d6ef3685a45b0f41b26198743a, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 3.52
+      objectReference: {fileID: 0}
+    - target: {fileID: 405488274200117893, guid: e89142d6ef3685a45b0f41b26198743a, type: 3}
       propertyPath: m_LocalScale.y
-      value: 4
+      value: 1.22
       objectReference: {fileID: 0}
     - target: {fileID: 405488274200117893, guid: e89142d6ef3685a45b0f41b26198743a, type: 3}
       propertyPath: m_LocalPosition.x
@@ -87,6 +91,30 @@ PrefabInstance:
       propertyPath: m_Name
       value: Breakout Paddle Variant
       objectReference: {fileID: 0}
+    - target: {fileID: 7412547887354365244, guid: e89142d6ef3685a45b0f41b26198743a, type: 3}
+      propertyPath: m_TagString
+      value: Paddle
+      objectReference: {fileID: 0}
+    - target: {fileID: 8344564394233438202, guid: e89142d6ef3685a45b0f41b26198743a, type: 3}
+      propertyPath: m_Size.x
+      value: 3.9
+      objectReference: {fileID: 0}
+    - target: {fileID: 8344564394233438202, guid: e89142d6ef3685a45b0f41b26198743a, type: 3}
+      propertyPath: m_Size.y
+      value: 1.19
+      objectReference: {fileID: 0}
+    - target: {fileID: 8344564394233438202, guid: e89142d6ef3685a45b0f41b26198743a, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 642b34e19a2babe49addcc25e7679db7, type: 3}
+    - target: {fileID: 8344564394233438202, guid: e89142d6ef3685a45b0f41b26198743a, type: 3}
+      propertyPath: m_DrawMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8344564394233438202, guid: e89142d6ef3685a45b0f41b26198743a, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -96,14 +124,17 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 7412547887354365244, guid: e89142d6ef3685a45b0f41b26198743a, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1867775307757791045}
+      addedObject: {fileID: 3000642062324414082}
+    - targetCorrespondingSourceObject: {fileID: 7412547887354365244, guid: e89142d6ef3685a45b0f41b26198743a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4674746990573498764}
   m_SourcePrefab: {fileID: 100100000, guid: e89142d6ef3685a45b0f41b26198743a, type: 3}
 --- !u!1 &911453448862053678 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7412547887354365244, guid: e89142d6ef3685a45b0f41b26198743a, type: 3}
   m_PrefabInstance: {fileID: 7672034877116411922}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1867775307757791045
+--- !u!114 &3000642062324414082
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -114,13 +145,82 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c4633dc61ad5d744bfb5d498241cff7, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Assembly-CSharp::Breakout.BreakoutPaddle
   controls:
     leftKey: 276
     rightKey: 275
-    paddleSpeed: 0
-    minX: -7.5
-    maxX: 7.5
+    paddleSpeed: 12
+    minX: -9
+    maxX: 9
+  doubleBallPrefab: {fileID: 0}
+  maxBounceAngle: 45
+--- !u!68 &4674746990573498764
+EdgeCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 911453448862053678}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_EdgeRadius: 0
+  m_Points:
+  - {x: -0.9975027, y: -0.25022984}
+  - {x: -1.0825741, y: -0.218328}
+  - {x: -1.3901592, y: -0.11435413}
+  - {x: -1.6425804, y: 0.080414295}
+  - {x: -1.6801074, y: 0.1857791}
+  - {x: -1.6599449, y: 0.26432133}
+  - {x: -1.6023195, y: 0.3038311}
+  - {x: -1.5123047, y: 0.3009448}
+  - {x: -1.4112488, y: 0.2752223}
+  - {x: -1.3095489, y: 0.2128439}
+  - {x: -1.0045049, y: 0.04585123}
+  - {x: -0.8705372, y: 0.008934021}
+  - {x: -0.55851597, y: -0.00066041946}
+  - {x: 0.722615, y: -0.0000047683716}
+  - {x: 0.79627293, y: 0.009072781}
+  - {x: 0.913275, y: 0.032443047}
+  - {x: 1.0553224, y: 0.08640957}
+  - {x: 1.2917576, y: 0.217525}
+  - {x: 1.419986, y: 0.26458836}
+  - {x: 1.5005155, y: 0.28360033}
+  - {x: 1.5526078, y: 0.2756877}
+  - {x: 1.6130658, y: 0.25352192}
+  - {x: 1.6267538, y: 0.18981934}
+  - {x: 1.5624192, y: 0.08484888}
+  - {x: 1.4480048, y: -0.018276215}
+  - {x: 1.0610609, y: -0.23210526}
+  m_AdjacentStartPoint: {x: 0, y: 0}
+  m_AdjacentEndPoint: {x: 0, y: 0}
+  m_UseAdjacentStartPoint: 0
+  m_UseAdjacentEndPoint: 0
 --- !u!4 &8059225057322775191 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 405488274200117893, guid: e89142d6ef3685a45b0f41b26198743a, type: 3}

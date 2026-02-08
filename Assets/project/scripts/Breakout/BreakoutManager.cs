@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
@@ -7,214 +9,268 @@ public class BreakoutManager : MonoBehaviour
 
 	[Header("Ball")]
 	public GameObject ballPrefab;
-	public Transform ballStart;
-	public float ballStartVelocity = 5f;
 	private GameObject currentBall;
 
 	[Header("Paddle")]
 	public Breakout.BreakoutPaddle paddle;
 
-	private Vector3 paddleStartPos;
+	[Header("Powerup Prefabs (Drops)")]
+	public GameObject bigPaddleDropPrefab;
+	public GameObject doubleBallDropPrefab;
+	public GameObject explosionDropPrefab;
+
+	private Dictionary<BreakoutBlock, GameObject> powerUpAssignment = new Dictionary<BreakoutBlock, GameObject>();
+	private bool explosionReady = false;
+	private Coroutine explosionTimerCoroutine;
+
+	// NEU: Referenz für die Geister-Block-Routine
+	private Coroutine ghostBlocksCoroutine;
 
 	[Header("UI Panels")]
 	public GameObject startPanel;
-	public GameObject gameOverObject;
+	public GameObject gameOverPanel;
 
-	[Header("Result UI")]
+	[Header("UI Text")]
+	public TextMeshProUGUI livesText;
+	public TextMeshProUGUI timerText;
 	public TextMeshProUGUI resultTitleText;
 	public TextMeshProUGUI resultStatsText;
 
-	[Header("Lives")]
-	public int lives = 10;
+	[Header("Game Settings")]
+	public int lives = 3;
 	private int currentLives;
-
-	[Header("Timer")]
-	public TextMeshProUGUI scoreText;
-	public TextMeshProUGUI timerText;
 	public float startTime = 60f;
 	private float timeRemaining;
 	private bool timerRunning = false;
-
-	private int remainingBlocks;
 	private bool gameEnded = false;
+	private int remainingBlocks;
 
 	public bool GameStarted { get; private set; } = false;
 
 	void Awake()
 	{
-		if (instance == null)
-			instance = this;
-		else
-			Destroy(gameObject);
+		if (instance == null) instance = this;
+		else Destroy(gameObject);
 	}
 
 	void Start()
 	{
 		startPanel.SetActive(true);
-		gameOverObject.SetActive(false);
-
-		timeRemaining = startTime;
-		UpdateTimerText();
-
+		gameOverPanel.SetActive(false);
 		currentLives = lives;
 		UpdateLivesUI();
-
-		paddleStartPos = paddle.transform.position;
-
-		remainingBlocks = GameObject.FindGameObjectsWithTag("Block").Length;
-		gameEnded = false;
-
+		timeRemaining = startTime;
+		UpdateTimerText();
+		SetupBlocksAndPowerups();
 		ResetBall();
+	}
+
+	void SetupBlocksAndPowerups()
+	{
+		BreakoutBlock[] allBlocks = FindObjectsOfType<BreakoutBlock>(true);
+		remainingBlocks = allBlocks.Length;
+		powerUpAssignment.Clear();
+
+		List<BreakoutBlock> tempPool = new List<BreakoutBlock>(allBlocks);
+		AssignToPool(tempPool, bigPaddleDropPrefab, 3);
+		AssignToPool(tempPool, doubleBallDropPrefab, 3);
+		AssignToPool(tempPool, explosionDropPrefab, 3);
+	}
+
+	void AssignToPool(List<BreakoutBlock> pool, GameObject prefab, int amount)
+	{
+		for (int i = 0; i < amount; i++)
+		{
+			if (pool.Count == 0) break;
+			int r = Random.Range(0, pool.Count);
+			if (!powerUpAssignment.ContainsKey(pool[r]))
+				powerUpAssignment.Add(pool[r], prefab);
+			pool.RemoveAt(r);
+		}
+	}
+
+	public void OnBlockDestroyed(Vector3 pos, BreakoutBlock block)
+	{
+		if (gameEnded) return;
+		if (powerUpAssignment.ContainsKey(block))
+			Instantiate(powerUpAssignment[block], pos, Quaternion.identity);
+
+		remainingBlocks--;
+		if (remainingBlocks <= 0) WinGame();
+	}
+
+	public void ActivateExplosion(float dur)
+	{
+		if (explosionTimerCoroutine != null) StopCoroutine(explosionTimerCoroutine);
+		explosionTimerCoroutine = StartCoroutine(ExplosionReadyTimer(dur));
+	}
+
+	IEnumerator ExplosionReadyTimer(float dur)
+	{
+		explosionReady = true;
+		yield return new WaitForSeconds(dur);
+		explosionReady = false;
+	}
+
+	void TriggerManualExplosion()
+	{
+		explosionReady = false;
+		if (explosionTimerCoroutine != null) StopCoroutine(explosionTimerCoroutine);
+
+		if (currentBall != null && currentBall.activeInHierarchy)
+		{
+			Collider2D[] hits = Physics2D.OverlapCircleAll(currentBall.transform.position, 2.5f);
+			foreach (var hit in hits)
+			{
+				if (hit.CompareTag("Block"))
+				{
+					BreakoutBlock block = hit.GetComponent<BreakoutBlock>();
+					if (block != null) block.TakeHit();
+				}
+			}
+		}
 	}
 
 	void Update()
 	{
-		if (!timerRunning || gameEnded)
-			return;
+		if (!GameStarted || gameEnded) return;
 
-		if (timeRemaining > 0)
+		if (timerRunning)
 		{
-			timeRemaining -= Time.deltaTime;
-			UpdateTimerText();
+			if (timeRemaining > 0) { timeRemaining -= Time.deltaTime; UpdateTimerText(); }
+			else { timeRemaining = 0; GameOver(); }
 		}
-		else
-		{
-			timeRemaining = 0;
-			GameOver();
-		}
+
+		if (explosionReady && Input.GetKeyDown(KeyCode.Space)) TriggerManualExplosion();
 	}
 
+	// ERGÄNZT: Startet die Geister-Block Routine beim Spielstart
 	public void StartGame()
 	{
 		GameStarted = true;
 		startPanel.SetActive(false);
-		ResetBall();
+		timerRunning = true;
+
+		if (ghostBlocksCoroutine != null) StopCoroutine(ghostBlocksCoroutine);
+		ghostBlocksCoroutine = StartCoroutine(GhostBlockRoutine());
 	}
 
-	public void StartTimer()
+	// NEU: Die Routine für das Verschwinden der Blöcke
+	IEnumerator GhostBlockRoutine()
 	{
-		if (!GameStarted || gameEnded)
-			return;
+		while (!gameEnded)
+		{
+			yield return new WaitForSeconds(30f); // Alle 30 Sekunden warten
 
-		timerRunning = true;
+			// Finde alle Blöcke, die gerade aktiv im Spiel sind
+			BreakoutBlock[] allBlocks = FindObjectsOfType<BreakoutBlock>();
+			List<BreakoutBlock> availableBlocks = new List<BreakoutBlock>();
+
+			foreach (var b in allBlocks)
+			{
+				if (b.gameObject.activeInHierarchy) availableBlocks.Add(b);
+			}
+
+			if (availableBlocks.Count > 0)
+			{
+				List<BreakoutBlock> chosenOnes = new List<BreakoutBlock>();
+				int amount = Mathf.Min(6, availableBlocks.Count);
+
+				// Wähle 6 zufällige Blöcke aus
+				for (int i = 0; i < amount; i++)
+				{
+					int r = Random.Range(0, availableBlocks.Count);
+					chosenOnes.Add(availableBlocks[r]);
+					availableBlocks.RemoveAt(r);
+				}
+
+				// Blöcke unsichtbar & unantastbar machen
+				foreach (var b in chosenOnes) b.SetGhostMode(true);
+
+				yield return new WaitForSeconds(3f); // 3 Sekunden warten
+
+				// Blöcke wieder normal machen
+				foreach (var b in chosenOnes) b.SetGhostMode(false);
+			}
+		}
 	}
 
 	public void OnDeath()
 	{
-		if (!GameStarted || gameEnded)
-			return;
-
+		if (!GameStarted || gameEnded) return;
 		currentLives--;
 		UpdateLivesUI();
-
-		if (currentLives <= 0)
-		{
-			GameOver();
-		}
-		else
-		{
-			currentBall.GetComponent<BreakoutBall>().ResetBallOnDeath();
-		}
+		if (currentLives <= 0) GameOver();
+		else if (currentBall != null) currentBall.GetComponent<BreakoutBall>().ResetBallOnDeath();
 	}
 
-	public void OnBlockDestroyed()
-	{
-		if (gameEnded)
-			return;
+	void WinGame() { EndGameCleanUp(); ShowResult(true); }
+	void GameOver() { EndGameCleanUp(); ShowResult(false); }
 
-		remainingBlocks--;
-
-		if (remainingBlocks <= 0)
-		{
-			WinGame();
-		}
-	}
-
-	void WinGame()
+	// Hilfsfunktion zum sauberen Beenden
+	void EndGameCleanUp()
 	{
 		gameEnded = true;
 		timerRunning = false;
-		GameStarted = false;
-
-		ShowResult(true);
-	}
-
-	public void GameOver()
-	{
-		if (gameEnded)
-			return;
-
-		gameEnded = true;
-		timerRunning = false;
-		GameStarted = false;
-
-		ShowResult(false);
+		if (ghostBlocksCoroutine != null) StopCoroutine(ghostBlocksCoroutine);
 	}
 
 	void ShowResult(bool won)
 	{
-		gameOverObject.SetActive(true);
+		gameOverPanel.SetActive(true);
+		if (currentBall) currentBall.GetComponent<Rigidbody2D>().simulated = false;
+		resultTitleText.text = won ? "SIEG!" : "GAME OVER";
+		resultStatsText.text = "ZEIT: " + Mathf.CeilToInt(timeRemaining) + "\nLEBEN: " + currentLives;
+	}
 
-		if (currentBall != null)
-		{
-			Rigidbody2D rb = currentBall.GetComponent<Rigidbody2D>();
-			rb.linearVelocity = Vector2.zero;
-			rb.simulated = false;
-		}
-
-		resultTitleText.text = won ? "YOU WON!" : "YOU LOST";
-
-		int time = Mathf.CeilToInt(timeRemaining);
-		resultStatsText.text =
-			"Time: " + time + "\n" +
-			"Lives: " + currentLives;
+	public void SetMainBallActive(bool active)
+	{
+		if (currentBall == null) return;
+		currentBall.SetActive(active);
+		if (active) currentBall.GetComponent<BreakoutBall>().ResetBall();
 	}
 
 	public void RestartGame()
 	{
-		gameOverObject.SetActive(false);
-		startPanel.SetActive(true);
-
-		// Timer & Leben zur�cksetzen
-		timeRemaining = startTime;
-		UpdateTimerText();
-		currentLives = lives;
-		UpdateLivesUI();
+		StopAllCoroutines();
+		explosionTimerCoroutine = null;
+		ghostBlocksCoroutine = null; // Reset der Coroutine-Referenz
 
 		gameEnded = false;
 		GameStarted = false;
+		timerRunning = false;
+		explosionReady = false;
+		timeRemaining = startTime;
+		currentLives = lives;
 
-		// Paddle zur�cksetzen
-		paddle.ResetPaddle();
+		gameOverPanel.SetActive(false);
+		startPanel.SetActive(true);
 
-		// Ball zur�cksetzen
+		if (currentBall != null) DestroyImmediate(currentBall);
+
+		GameObject[] powerUps = GameObject.FindGameObjectsWithTag("PowerUp");
+		foreach (GameObject p in powerUps) Destroy(p);
+
+		DoubleBall[] extraBalls = FindObjectsOfType<DoubleBall>();
+		foreach (DoubleBall eb in extraBalls) Destroy(eb.gameObject);
+
+		BreakoutBlock[] allBlocks = FindObjectsOfType<BreakoutBlock>(true);
+		foreach (var b in allBlocks) b.ResetBlock();
+
+		if (paddle != null) paddle.ResetPaddle();
+		SetupBlocksAndPowerups();
 		ResetBall();
 
-		// Bl�cke zur�cksetzen
-		BreakoutBlock[] blocks = FindObjectsOfType<BreakoutBlock>();
-		remainingBlocks = blocks.Length;
-		foreach (BreakoutBlock block in blocks)
-		{
-			block.ResetBlock();
-		}
+		UpdateLivesUI(); UpdateTimerText();
 	}
 
-	void UpdateLivesUI()
-	{
-		scoreText.text = "LIVES: " + currentLives;
-	}
-
-	void UpdateTimerText()
-	{
-		int seconds = Mathf.CeilToInt(timeRemaining);
-		timerText.text = "TIME: " + seconds;
-	}
+	void UpdateLivesUI() { if (livesText != null) livesText.text = "Leben: " + currentLives; }
+	void UpdateTimerText() { if (timerText != null) timerText.text = "Zeit: " + Mathf.CeilToInt(timeRemaining); }
 
 	public void ResetBall()
 	{
 		if (currentBall == null)
-			currentBall = Instantiate(ballPrefab, ballStart.position, Quaternion.identity);
-
+			currentBall = Instantiate(ballPrefab, Vector3.zero, Quaternion.identity);
 		currentBall.GetComponent<BreakoutBall>().ResetBall();
 	}
 }
