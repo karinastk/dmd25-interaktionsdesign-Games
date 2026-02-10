@@ -1,68 +1,83 @@
 using UnityEngine;
+using System.Collections;
 
 namespace Pong
 {
+	public class PongPaddle : MonoBehaviour
+	{
+		public PongControls controls;
 
-    public class PongPaddle : MonoBehaviour
-    {
-        public PongControls controls;
-     
-        public enum Direction
-        {
-            Up,
-            Down
+		[Header("Setup")]
+		public bool isPlayer1;
 
-        }
-        // Update is called once per frame
-        void Update()
-        {
-            if (Input.GetKey(controls.upKey))
-                Move(Direction.Up);            
-            
-            if (Input.GetKey(controls.downKey))
-                Move(Direction.Down);   
-        }
+		[Header("Catch Up Settings")]
+		[Tooltip("Faktor für die Verlängerung (Width im Sprite Renderer)")]
+		public float catchUpScaleMultiplier = 2.0f;
 
-        void Move(Direction direction)
-        {
-            {
-                float moveDistance = controls.paddleSpeed * Time.deltaTime;
-                moveDistance *= direction == Direction.Up ? 1 : -1;
+		private Vector3 startPosition;
+		private SpriteRenderer spriteRenderer;
+		private Vector2 normalSpriteSize;
 
-                Vector3 moveVector = new Vector3(0, moveDistance, 0);
+		public enum Direction { Up, Down }
 
-                if(transform.position.y + moveDistance > controls.maxY)
-                {
-                    transform.position =
-                        new Vector3(
-                            transform.position.x,
-                            controls.maxY,
-                            transform.position.z
-                            );
-                }
-                else if (transform.position.y + moveDistance < controls.minY)
-                {
-                    transform.position =
-                       new Vector3(
-                           transform.position.x,
-                           controls.minY,
-                           transform.position.z
-                           );
+		void Start()
+		{
+			startPosition = transform.position;
+			spriteRenderer = GetComponent<SpriteRenderer>();
 
-                }
-                else
-                {
-                    transform.Translate(moveVector);
-                }
-                    
+			if (spriteRenderer != null)
+			{
+				normalSpriteSize = spriteRenderer.size;
+			}
+		}
 
-                Debug.Log(direction.ToString() + "gedrückt");
+		void Update()
+		{
+			bool isInverted = PongManager.instance != null && PongManager.instance.controlsInverted;
 
+			if (Input.GetKey(controls.upKey))
+				Move(isInverted ? Direction.Down : Direction.Up);
 
-           
+			if (Input.GetKey(controls.downKey))
+				Move(isInverted ? Direction.Up : Direction.Down);
+		}
 
-            }
+		void Move(Direction direction)
+		{
+			float currentSpeed = controls.paddleSpeed;
 
-        }
-    }
+			if (PongManager.instance != null && PongManager.instance.currentBallVelocity > PongManager.instance.ballStartVelocity)
+			{
+				currentSpeed *= 1.5f;
+			}
+
+			float moveDistance = currentSpeed * Time.deltaTime;
+			moveDistance *= direction == Direction.Up ? 1 : -1;
+
+			float newY = transform.position.y + moveDistance;
+			newY = Mathf.Clamp(newY, controls.minY, controls.maxY);
+
+			transform.position = new Vector3(transform.position.x, newY, transform.position.z);
+		}
+
+		public void StartCatchUpEvent(float duration)
+		{
+			if (spriteRenderer == null) return;
+			StopCoroutine("CatchUpRoutine");
+			StartCoroutine(CatchUpRoutine(duration));
+		}
+
+		IEnumerator CatchUpRoutine(float duration)
+		{
+			spriteRenderer.size = new Vector2(normalSpriteSize.x * catchUpScaleMultiplier, normalSpriteSize.y);
+			yield return new WaitForSeconds(duration);
+			spriteRenderer.size = normalSpriteSize;
+		}
+
+		public void ResetPosition()
+		{
+			transform.position = startPosition;
+			if (spriteRenderer != null) spriteRenderer.size = normalSpriteSize;
+		}
+	}
 }

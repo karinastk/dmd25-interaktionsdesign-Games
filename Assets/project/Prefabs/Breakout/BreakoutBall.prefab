@@ -170,4 +170,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   paddleBallOffsetY: 0.05
-  ballSpeed: 5
+  ballSpeed: 6

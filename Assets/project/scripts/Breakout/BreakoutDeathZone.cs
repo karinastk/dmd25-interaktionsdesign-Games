@@ -4,7 +4,15 @@ public class BreakoutDeathZone : MonoBehaviour
 {
 	private void OnTriggerEnter2D(Collider2D other)
 	{
-		if (other.CompareTag("Ball")) BreakoutManager.instance.OnDeath();
-		else if (other.CompareTag("PowerUp")) Destroy(other.gameObject);
+		// Wenn der Hauptball reinfällt: Leben abziehen & Reset
+		if (other.CompareTag("Ball"))
+		{
+			BreakoutManager.instance.OnDeath();
+		}
+		// Wenn ein Power-Up reinfällt: Einfach löschen (Aufräumen)
+		else if (other.CompareTag("PowerUp"))
+		{
+			Destroy(other.gameObject);
+		}
 	}
 }

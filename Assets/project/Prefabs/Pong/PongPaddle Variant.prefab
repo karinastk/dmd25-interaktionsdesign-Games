@@ -9,6 +9,14 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 405488274200117893, guid: 5370bd590fa30d04e9c59507627718fe, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 405488274200117893, guid: 5370bd590fa30d04e9c59507627718fe, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 405488274200117893, guid: 5370bd590fa30d04e9c59507627718fe, type: 3}
       propertyPath: m_LocalPosition.x
       value: -9
       objectReference: {fileID: 0}
@@ -53,6 +61,10 @@ PrefabInstance:
       value: PongPaddle Variant
       objectReference: {fileID: 0}
     - target: {fileID: 8344564394233438202, guid: 5370bd590fa30d04e9c59507627718fe, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: cf3c80945b22a36428cc383988ff384a, type: 3}
+    - target: {fileID: 8344564394233438202, guid: 5370bd590fa30d04e9c59507627718fe, type: 3}
       propertyPath: m_Color.b
       value: 1
       objectReference: {fileID: 0}
@@ -64,6 +76,18 @@ PrefabInstance:
       propertyPath: m_Color.r
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 8344564394233438202, guid: 5370bd590fa30d04e9c59507627718fe, type: 3}
+      propertyPath: m_SortingLayer
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8344564394233438202, guid: 5370bd590fa30d04e9c59507627718fe, type: 3}
+      propertyPath: m_SortingLayerID
+      value: 943938777
+      objectReference: {fileID: 0}
+    - target: {fileID: 8344564394233438202, guid: 5370bd590fa30d04e9c59507627718fe, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -74,6 +98,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7412547887354365244, guid: 5370bd590fa30d04e9c59507627718fe, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1882016845521799336}
+    - targetCorrespondingSourceObject: {fileID: 7412547887354365244, guid: 5370bd590fa30d04e9c59507627718fe, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2115987402416513179}
   m_SourcePrefab: {fileID: 100100000, guid: 5370bd590fa30d04e9c59507627718fe, type: 3}
 --- !u!1 &5437784036271388567 stripped
 GameObject:
@@ -87,7 +114,7 @@ BoxCollider2D:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5437784036271388567}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 3
   m_Density: 1
   m_Material: {fileID: 6200000, guid: f774cbeeb49014141b40e3719247940d, type: 2}
@@ -116,9 +143,9 @@ BoxCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_SpriteTilingProperty:
-    border: {x: 0, y: 0, z: 0, w: 0}
+    border: {x: 0.29, y: 0.22, z: 0.35, w: 0.32999998}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 1, y: 1}
+    oldSize: {x: 3.52, y: 1.22}
     newSize: {x: 1, y: 1}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -144,3 +171,46 @@ MonoBehaviour:
     paddleSpeed: 7
     minY: -3
     maxY: 3
+--- !u!68 &2115987402416513179
+EdgeCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5437784036271388567}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 6200000, guid: 28d1f39b168a2e34391972d5f67c2e48, type: 2}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_EdgeRadius: 0
+  m_Points:
+  - {x: -1.76, y: 0}
+  - {x: 1.76, y: 0}
+  m_AdjacentStartPoint: {x: 0, y: 0}
+  m_AdjacentEndPoint: {x: 0, y: 0}
+  m_UseAdjacentStartPoint: 0
+  m_UseAdjacentEndPoint: 0
