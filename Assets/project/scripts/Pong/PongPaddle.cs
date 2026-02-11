@@ -27,14 +27,17 @@ namespace Pong
 
 			if (spriteRenderer != null)
 			{
+				// Speichert die Originalgröße des Schlägers
 				normalSpriteSize = spriteRenderer.size;
 			}
 		}
 
 		void Update()
 		{
+			// Prüft beim Manager, ob die Steuerung gerade vertauscht sein soll
 			bool isInverted = PongManager.instance != null && PongManager.instance.controlsInverted;
 
+			// Bewegungslogik unter Berücksichtigung der Invertierung
 			if (Input.GetKey(controls.upKey))
 				Move(isInverted ? Direction.Down : Direction.Up);
 
@@ -46,6 +49,7 @@ namespace Pong
 		{
 			float currentSpeed = controls.paddleSpeed;
 
+			// Schläger wird schneller, wenn der Ball im "Fast Ball" Modus ist
 			if (PongManager.instance != null && PongManager.instance.currentBallVelocity > PongManager.instance.ballStartVelocity)
 			{
 				currentSpeed *= 1.5f;
@@ -54,6 +58,7 @@ namespace Pong
 			float moveDistance = currentSpeed * Time.deltaTime;
 			moveDistance *= direction == Direction.Up ? 1 : -1;
 
+			// Verhindert, dass der Schläger aus dem Spielfeld fährt
 			float newY = transform.position.y + moveDistance;
 			newY = Mathf.Clamp(newY, controls.minY, controls.maxY);
 
@@ -67,10 +72,15 @@ namespace Pong
 			StartCoroutine(CatchUpRoutine(duration));
 		}
 
+		// Coroutine: Macht den Schläger für eine bestimmte Zeit größer
 		IEnumerator CatchUpRoutine(float duration)
 		{
+			// Breite des Sprites multiplizieren (Schläger wird länger)
 			spriteRenderer.size = new Vector2(normalSpriteSize.x * catchUpScaleMultiplier, normalSpriteSize.y);
+
 			yield return new WaitForSeconds(duration);
+
+			// Nach Ablauf der Zeit wieder auf Normalgröße setzen
 			spriteRenderer.size = normalSpriteSize;
 		}
 
