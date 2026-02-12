@@ -8293,6 +8293,14 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3000642062324414082, guid: 3dce301040cb9564ba3ae57ed10ee76c, type: 3}
+      propertyPath: controls.maxX
+      value: 8.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3000642062324414082, guid: 3dce301040cb9564ba3ae57ed10ee76c, type: 3}
+      propertyPath: controls.minX
+      value: -8.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3000642062324414082, guid: 3dce301040cb9564ba3ae57ed10ee76c, type: 3}
       propertyPath: bigPaddlePrefab
       value: 
       objectReference: {fileID: 1315797633652237800, guid: d8171d2cc16395245bb5e70251bdd8a7, type: 3}
