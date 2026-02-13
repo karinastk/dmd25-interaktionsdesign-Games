@@ -844,7 +844,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &212216540
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1558,7 +1558,8 @@ MonoBehaviour:
   m_text: 'Hintergrund-Design: KI generiert (ChatGPT)
 
     Musik/ SFX: pixabay.com
-    (XtremeFreddy, Freesound Community, fumiya112, Leszek_Szary, WildBurne, KoiRoylers)'
+    (XtremeFreddy, Freesound Community, fumiya112, Leszek_Szary, WildBurne, KoiRoylers,
+    Superpuyfans1234, myfox14)'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1835,7 +1836,8 @@ MonoBehaviour:
   m_text: 'Hintergrund-Design: Pinterest (xv_afera)
 
     Musik/ SFX: pixabay.com
-    (cabled_mess, mattwasser, annoyedCactus, neezen., myfox14, Driken5482)'
+    (cabled_mess, mattwasser, annoyedCactus, neezen., myfox14, Driken5482, Superpuyfans1234,
+    freesoundeffects)'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -4230,7 +4232,7 @@ MonoBehaviour:
     (syncopika)
 
     SFX: pixabay.com (freesoundeffects, DenielCZ, myfox14, Superpuyfans1234,
-    Scratchonix)'
+    Scratchonix, BenKirb)'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
